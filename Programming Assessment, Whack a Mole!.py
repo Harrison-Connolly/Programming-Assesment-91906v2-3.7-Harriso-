@@ -24,6 +24,7 @@ class MyWindow(QMainWindow):
         print("3X3 layout button created")
         page1_layout.addWidget(self.switch_button)
         self.page1.setLayout(page1_layout)
+    
 
         #second page with the 3x3 grid layout.
         self.page2 = QWidget()
@@ -31,30 +32,34 @@ class MyWindow(QMainWindow):
         self.buttons = []
         for row in range (3):
             for col in range(3):
-                btn = QPushButton(f"(Empty) {row},{col}")
-                grid_layout.addWidget(btn, row, col)
-                btn.clicked.connect(lambda clicked, r=row, c=col: self.button_click(r, c))
-        print("3X3 grid layout created")
-        self.buttons.append(btn)
+                button = QPushButton(f"(Empty) {row},{col}")
+                grid_layout.addWidget(button, row, col)
+                button.clicked.connect(lambda clicked, r=row, c=col: self.button_click(r, c))
+                self.buttons.append(button)
         self.page2.setLayout(grid_layout)
 
         self.stack.addWidget(self.page1)
         self.stack.addWidget(self.page2)
 
+        self.mole_row = None
+        self.mole_col = None
+
     def show_grid_page(self):
         self.stack.setCurrentWidget(self.page2)
+        self.placemole()
+    def get_button(self, row, col):
+        return self.buttons[row * 3 + col]
+    def placemole(self):
+        for button in self.buttons:
+            button.setText("Empty")
 
-    def button_click(self, row, col):
-        print(f"Button clicked at {row}, {col}")
-        mole = (random_row, random_col)
-        random_row = random.randint(0, 2)
-        random_col = random.randint(0, 2)
-        if row == random_row and col == random_col:
-            QMessageBox.information(self, "Hit!", f"You hit the mole at {row}, {col}!")
-        else:
-            QMessageBox.information(self, "Miss!", f"You missed! The mole was at {random_row}, {random_col}.")
-        
-
+        while True:
+            new_row = random.randint(0, 2)
+            new_col = random.randint(0, 2)
+            if (new_row, new_col) != (self.mole_row, self.mole_col):
+                break
+        self.mole_row, self.mole_col = new_row, new_col
+        self.get_button(new_row, new_col).setText("Mole")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
