@@ -1,7 +1,6 @@
-from ast import While
 import sys
 import random
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QGridLayout, QStackedWidget, QWidget, QVBoxLayout, QLabel, QMessageBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QGridLayout, QStackedWidget, QWidget, QVBoxLayout, QLabel
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -33,13 +32,13 @@ class MyWindow(QMainWindow):
         page1_layout.addWidget(self.switch_button2)
         self.page1.setLayout(page1_layout)        
 
+        # Second page with grid layout for the game.
         self.page2 = QWidget()
         self.stack.addWidget(self.page1)
         self.stack.addWidget(self.page2)
 
     def start_game(self, size):
         self.value = size
-        self.show_grid_page
         print(f"{size}X{size} layout button clicked")
         self.build_grid()
         self.stack.setCurrentWidget(self.page2)
@@ -59,8 +58,8 @@ class MyWindow(QMainWindow):
  #second page with the 3x3 grid layout.q
         grid_layout = QGridLayout()
         self.buttons = []
-        for row in range ({self.value}):
-            for col in range({self.value}):
+        for row in range (self.value):
+            for col in range(self.value):
                 button = QPushButton(f"(Empty) {row},{col}")
                 grid_layout.addWidget(button, row, col)
                 button.clicked.connect(lambda clicked, r=row, c=col: self.button_click(r, c))
@@ -69,13 +68,32 @@ class MyWindow(QMainWindow):
     def get_button(self, row, col):
         return self.buttons[row * self.value + col]
 
+    #Code that will determine where the mole is randomly placed in the grid.
     def placemole(self):
         for button in self.buttons:
             button.setText("Empty")
-    While True:
+
         self.mole_row = random.randint(0, self.value - 1)
         self.mole_col = random.randint(0, self.value - 1)
-            
+        self.get_button(self.mole_row, self.mole_col).setText("Mole")
+    #Scoreboard that will go up in value when the mole is hit.
+    def scoreboard(self):
+        self.score = 0
+        self.score_label = QLabel(f"Score: {self.score}")
+        self.score_label.move(10, 10)
+        
+
+    def button_click(self, row, col):
+        if row == self.mole_row and col == self.mole_col:
+            print("HIT!")
+            self.score + 1
+            self.score_label.setText(f"Score: {self.score}")
+            self.placemole()  # Place a new mole
+        else:
+            print("MISS!")
+            self.score = 0
+            self.score_label.setText(f"Score: {self.score}")
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
