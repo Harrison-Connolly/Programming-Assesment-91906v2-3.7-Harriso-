@@ -1,7 +1,7 @@
 import sys
 import random
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QGridLayout, QStackedWidget, QWidget, QVBoxLayout, QLabel
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QPushButton, QGridLayout, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout, QLabel, QMessageBox
+from PyQt6.QtCore import Qt, QTimer
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -14,6 +14,11 @@ class MyWindow(QMainWindow):
         self.buttons = []
         self.mole_row = None
         self.mole_col = None
+        self.time_left = 30
+        self.mole_timer = QTimer(self)
+        self.mole_timer.timeout.connect(self.placemole)   # mole will move on its own depending on time
+        self.game_timer = QTimer(self)
+        self.game_timer.timeout.connect(self.tick)
 
         self.initUI()
 
@@ -43,41 +48,69 @@ class MyWindow(QMainWindow):
     def start_game(self, size):
         self.value = size
         self.score = 0
+        self.time_left = 30
         print(f"{size}X{size} layout button clicked")
         self.build_grid()
         self.stack.setCurrentWidget(self.page2)
         self.placemole()
+        self.mole_timer.start(2500)   # mole moves every "X" miliseconds (1000 = 1 second)
+        self.game_timer.start(1000)   # Changes how fast the timer ticks down in miliseconds
+
+    def tick(self):
+        self.time_left -= 1
+        self.time_label.setText(f"Time: {self.time_left}")
+        if self.time_left <= 0:
+            self.end_game()
+
+    def end_game(self):
+        self.mole_timer.stop()
+        self.game_timer.stop()
+        QMessageBox.information(self, "Game over", f"Final score: {self.score}")
+        self.stack.setCurrentWidget(self.page1) 
 
     def build_grid(self):
-    # removes buttons from the previous game.
-        old_layout = self.page2.layout()
-        if old_layout is not None:
-            while old_layout.count():
-                item = old_layout.takeAt(0)
-                widget = item.widget()
-                if widget is not None:
-                    widget.deleteLater()
-            QWidget().setLayout(old_layout)
+        # Clears the previous grid and makes a new one based on size.
+        self.stack.removeWidget(self.page2)
+        self.page2.deleteLater()
+        self.page2 = QWidget()
+        self.stack.addWidget(self.page2)
 
         page2_layout = QVBoxLayout()
-        
-        self.score_label = QLabel(f"Score: {self.score}")
-        page2_layout.addWidget(self.score_label) 
-        self.score_label.setStyleSheet("width: 25%; height: 20px; color: black; font-size: 18px; font-weight: bold; background-color: white; border: 1px solid black;")
-        page2_layout.addWidget(self.score_label, alignment=Qt.AlignmentFlag.AlignRight)
 
- #second page with the alternating grid layout.
+        self.score_label = QLabel(f"Score: {self.score}")
+        self.score_label.setStyleSheet(
+            "color: black; font-size: 14px; font-weight: bold; "
+            "background-color: white; padding: 4px 8px; border: 1px solid black; border-radius: 4px;"
+        )
+        self.score_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.score_label.adjustSize()
+        self.time_label = QLabel(f"Time: {self.time_left}")
+        self.time_label.setStyleSheet(
+            "color: black; font-size: 14px; font-weight: bold; "
+            "background-color: white; padding: 4px 8px; border: 1px solid black; border-radius: 4px;"
+        )
+        self.time_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+        score_bar = QHBoxLayout()
+        score_bar.addWidget(self.time_label)    # time on the left
+        score_bar.addStretch()                  # pushes the score to the right
+        score_bar.addWidget(self.score_label)
+        page2_layout.addLayout(score_bar)
+
+        # --- Grid of buttons added AFTER the score bar ---
         grid_layout = QGridLayout()
         self.buttons = []
-        for row in range (self.value):
+        for row in range(self.value):
             for col in range(self.value):
                 button = QPushButton(f"(Empty) {row},{col}")
+                button.setFixedHeight(80)   # change 80 to whatever height you want
                 grid_layout.addWidget(button, row, col)
                 button.clicked.connect(lambda clicked, r=row, c=col: self.button_click(r, c))
                 self.buttons.append(button)
 
-            page2_layout.addLayout(grid_layout)
-            self.page2.setLayout(page2_layout)
+        page2_layout.addLayout(grid_layout)
+        self.page2.setLayout(page2_layout)
+
 
     def get_button(self, row, col):
         return self.buttons[row * self.value + col]
@@ -85,11 +118,14 @@ class MyWindow(QMainWindow):
     #Code that will determine where the mole is randomly placed in the grid.
     def placemole(self):
         for button in self.buttons:
-            button.setText("Empty")
-
-        self.mole_row = random.randint(0, self.value - 1)
-        self.mole_col = random.randint(0, self.value - 1)
-        self.get_button(self.mole_row, self.mole_col).setText("Mole")
+            button.setText(".")
+        while True:
+            r = random.randint(0, self.value - 1)
+            c = random.randint(0, self.value - 1)
+            if (r, c) != (self.mole_row, self.mole_col):
+                break
+        self.mole_row, self.mole_col = r, c
+        self.get_button(r, c).setText("Mole")
 
     #Scoreboard that will go up in value when the mole is hit.
     def button_click(self, row, col):
@@ -99,6 +135,7 @@ class MyWindow(QMainWindow):
             self.score_label.setText(f"Score: {self.score}")
             print(f"Score: {self.score}")
             self.placemole()  # Place a new mole
+            self.mole_timer.start(1000)
         else:
             print("MISS!", self.score)
             self.score_label.setText(f"Score: {self.score}")
