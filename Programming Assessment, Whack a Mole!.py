@@ -39,6 +39,9 @@ class MyWindow(QMainWindow):
         page1_layout.addWidget(self.switch_button)
         page1_layout.addWidget(self.switch_button2)
         self.page1.setLayout(page1_layout)        
+        self.page1.setStyleSheet("background-color: lightblue;")  # Set background color for page1
+        self.switch_button.setStyleSheet("background-color: rgb(50, 205, 50); font-size: 16px; padding: 10px; border: 3px solid black;")
+        self.switch_button2.setStyleSheet("background-color: rgb(50, 205, 50); font-size: 16px; padding: 10px; border: 3px solid black;")
 
         # Second page with grid layout for the game.
         self.page2 = QWidget()
@@ -54,22 +57,16 @@ class MyWindow(QMainWindow):
         self.stack.setCurrentWidget(self.page2)
         self.placemole()
         self.mole_timer.start(2500)   # mole moves every "X" miliseconds (1000 = 1 second)
-        self.game_timer.start(1000)   # Changes how fast the timer ticks down in miliseconds
+        self.game_timer.start(1000)   # Changes how fast the timer ticks down in miliseconds, base 1000
 
     def tick(self):
         self.time_left -= 1
         self.time_label.setText(f"Time: {self.time_left}")
         if self.time_left <= 0:
-            self.end_game()
-
-    def end_game(self):
-        self.mole_timer.stop()
-        self.game_timer.stop()
-        QMessageBox.information(self, "Game over", f"Final score: {self.score}")
-        self.stack.setCurrentWidget(self.page1) 
+            self.end_game() 
 
     def build_grid(self):
-        # Clears the previous grid and makes a new one based on size.
+        # Clears the previous grid and makes a new one based on selected size.
         self.stack.removeWidget(self.page2)
         self.page2.deleteLater()
         self.page2 = QWidget()
@@ -80,33 +77,47 @@ class MyWindow(QMainWindow):
         self.score_label = QLabel(f"Score: {self.score}")
         self.score_label.setStyleSheet(
             "color: black; font-size: 14px; font-weight: bold; "
-            "background-color: white; padding: 4px 8px; border: 1px solid black; border-radius: 4px;"
+            "background-color: rgb(50, 205, 50); padding: 4px 8px; border: 3px solid black; border-radius: 4px;"
         )
         self.score_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.score_label.adjustSize()
         self.time_label = QLabel(f"Time: {self.time_left}")
         self.time_label.setStyleSheet(
             "color: black; font-size: 14px; font-weight: bold; "
-            "background-color: white; padding: 4px 8px; border: 1px solid black; border-radius: 4px;"
+            "background-color: rgb(50, 205, 50); padding: 4px 8px; border: 3px solid black; border-radius: 4px;"
         )
         self.time_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
+        # back button code
+        self.back_button = QPushButton("Back To Start")
+        self.back_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.back_button.clicked.connect(self.back_home)
+        self.back_button.setStyleSheet(
+            "color: black; font-size: 14px; font-weight: bold; "
+            "background-color: rgb(50, 205, 50); padding: 4px 8px; border: 3px solid black; border-radius: 4px;"
+        )
+
         score_bar = QHBoxLayout()
         score_bar.addWidget(self.time_label)    # time on the left
+        score_bar.addStretch()                  # pushes the back button to the middle
+        score_bar.addWidget(self.back_button)   # time in middle
         score_bar.addStretch()                  # pushes the score to the right
-        score_bar.addWidget(self.score_label)
+        score_bar.addWidget(self.score_label)   # score on right
         page2_layout.addLayout(score_bar)
 
-        # --- Grid of buttons added AFTER the score bar ---
+        # Creates the grid of buttons based on the selected size (3x3 or 5x5).
         grid_layout = QGridLayout()
         self.buttons = []
         for row in range(self.value):
             for col in range(self.value):
                 button = QPushButton(f"(Empty) {row},{col}")
-                button.setFixedHeight(80)   # change 80 to whatever height you want
+                button.setFixedHeight(80)
                 grid_layout.addWidget(button, row, col)
                 button.clicked.connect(lambda clicked, r=row, c=col: self.button_click(r, c))
                 self.buttons.append(button)
+                self.page2.setStyleSheet("background-color: lightgreen;")  # Set background color for page2
+                button.setStyleSheet("background-color: lightgreen; font-size: 16px; padding: 10px; border: 3px solid black;")
+                self.buttons[-1].setStyleSheet("background-color: rgb(119, 63, 26); font-size: 16px; padding: 10px; border: 3px solid black;")
 
         page2_layout.addLayout(grid_layout)
         self.page2.setLayout(page2_layout)
@@ -139,7 +150,19 @@ class MyWindow(QMainWindow):
         else:
             print("MISS!", self.score)
             self.score_label.setText(f"Score: {self.score}")
+    def stop_game(self):
+        self.mole_timer.stop()
+        self.game_timer.stop()
+        self.stack.setCurrentWidget(self.page1)
 
+    def endgame(self):
+        self.mole_timer.stop()
+        self.game_timer.stop()
+        QMessageBox.information(self, "Game over", f"Final score: {self.score}")
+        self.stack.setCurrentWidget(self.page1)
+
+    def back_home(self):
+        self.stop_game()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
