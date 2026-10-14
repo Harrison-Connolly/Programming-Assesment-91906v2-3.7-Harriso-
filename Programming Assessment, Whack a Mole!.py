@@ -1,7 +1,9 @@
 import sys
 import random
+import os
 from PyQt6.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QPushButton, QGridLayout, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout, QLabel, QMessageBox
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, QSize
+from PyQt6.QtGui import QIcon, QPixmap
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -19,6 +21,9 @@ class MyWindow(QMainWindow):
         self.mole_timer.timeout.connect(self.placemole)   # mole will move on its own depending on time
         self.game_timer = QTimer(self)
         self.game_timer.timeout.connect(self.tick)
+        image_path = os.path.join(os.path.dirname(os.fspath(__file__)), "photo", "mole.jpg")
+        self.mole_icon = QIcon(image_path)
+        self.empty_icon = QIcon()
 
         self.initUI()
 
@@ -89,7 +94,7 @@ class MyWindow(QMainWindow):
         self.time_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         # back button code
-        self.back_button = QPushButton("Back To Start")
+        self.back_button = QPushButton("End Game")
         self.back_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.back_button.clicked.connect(self.back_home)
         self.back_button.setStyleSheet(
@@ -129,14 +134,17 @@ class MyWindow(QMainWindow):
     #Code that will determine where the mole is randomly placed in the grid.
     def placemole(self):
         for button in self.buttons:
-            button.setText(".")
+            button.setText("")
+            button.setIcon(self.empty_icon) #No image for the empty button so its just blank
         while True:
             r = random.randint(0, self.value - 1)
             c = random.randint(0, self.value - 1)
             if (r, c) != (self.mole_row, self.mole_col):
                 break
         self.mole_row, self.mole_col = r, c
-        self.get_button(r, c).setText("Mole")
+        mole_button = self.get_button(r, c)
+        mole_button.setIcon(self.mole_icon)  # Set the mole icon for the button
+        mole_button.setIconSize(QSize(64, 64))  # Set the size of the mole icon
 
     #Scoreboard that will go up in value when the mole is hit.
     def button_click(self, row, col):
@@ -160,9 +168,13 @@ class MyWindow(QMainWindow):
         self.game_timer.stop()
         QMessageBox.information(self, "Game over", f"Final score: {self.score}")
         self.stack.setCurrentWidget(self.page1)
+        if  self.time_left <= 0:
+            self.endgame()
 
     def back_home(self):
         self.stop_game()
+
+    
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
