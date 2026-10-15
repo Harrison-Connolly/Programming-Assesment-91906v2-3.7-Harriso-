@@ -1,9 +1,9 @@
 import sys
 import random
 import os
-from PyQt6.QtWidgets import QApplication, QHBoxLayout, QMainWindow, QPushButton, QGridLayout, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout, QLabel, QMessageBox
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLineEdit, QMainWindow, QPushButton, QGridLayout, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout, QLabel, QMessageBox
 from PyQt6.QtCore import Qt, QTimer, QSize
-from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtGui import QIcon, QIntValidator, QPixmap
 
 class MyWindow(QMainWindow):
     def __init__(self):
@@ -36,27 +36,35 @@ class MyWindow(QMainWindow):
         self.page1 = QWidget()
         page1_layout = QVBoxLayout()
         self.switch_button = QPushButton("3X3 layout",)
-        self.switch_button2 = QPushButton("5X5 layout")
-        self.switch_button.move(100, 100)
+        self.switch_button2 = QPushButton("4X4 layout")
         self.switch_button.clicked.connect(lambda: self.start_game(3))
-        self.switch_button2.clicked.connect(lambda: self.start_game(5))
-        print("3X3 layout button created") 
+        self.switch_button2.clicked.connect(lambda: self.start_game(4))
+
+        self.time_input = QLineEdit()
+        self.time_input.setPlaceholderText("Enter time in seconds")
+        self.time_input.setValidator(QIntValidator(1, 300))  
+
+        page1_layout.addWidget(self.time_input)
         page1_layout.addWidget(self.switch_button)
         page1_layout.addWidget(self.switch_button2)
+        
         self.page1.setLayout(page1_layout)        
         self.page1.setStyleSheet("background-color: lightblue;")  # Set background color for page1
         self.switch_button.setStyleSheet("background-color: rgb(50, 205, 50); font-size: 16px; padding: 10px; border: 3px solid black;")
         self.switch_button2.setStyleSheet("background-color: rgb(50, 205, 50); font-size: 16px; padding: 10px; border: 3px solid black;")
+        self.time_input.setStyleSheet("background-color: rgb(50, 205, 50); font-size: 16px; padding: 10px; border: 3px solid black;")
 
         # Second page with grid layout for the game.
         self.page2 = QWidget()
         self.stack.addWidget(self.page1)
         self.stack.addWidget(self.page2)
 
+
     def start_game(self, size):
         self.value = size
         self.score = 0
-        self.time_left = 30
+        text = self.time_input.text().strip()
+        self.time_left = int(text) if text.isdigit() and int(text) > 0 else 30
         print(f"{size}X{size} layout button clicked")
         self.build_grid()
         self.stack.setCurrentWidget(self.page2)
@@ -68,7 +76,7 @@ class MyWindow(QMainWindow):
         self.time_left -= 1
         self.time_label.setText(f"Time: {self.time_left}")
         if self.time_left <= 0:
-            self.end_game() 
+            self.endgame() 
 
     def build_grid(self):
         # Clears the previous grid and makes a new one based on selected size.
@@ -168,8 +176,6 @@ class MyWindow(QMainWindow):
         self.game_timer.stop()
         QMessageBox.information(self, "Game over", f"Final score: {self.score}")
         self.stack.setCurrentWidget(self.page1)
-        if  self.time_left <= 0:
-            self.endgame()
 
     def back_home(self):
         self.stop_game()
