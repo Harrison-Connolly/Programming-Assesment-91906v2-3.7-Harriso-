@@ -3,6 +3,7 @@ import random
 import os
 from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLineEdit, QMainWindow, QPushButton, QGridLayout, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout, QLabel, QMessageBox
 from PyQt6.QtCore import Qt, QTimer, QSize
+from datetime import datetime
 from PyQt6.QtGui import QIcon, QIntValidator, QPixmap
 
 class MyWindow(QMainWindow):
@@ -22,6 +23,7 @@ class MyWindow(QMainWindow):
         self.game_timer = QTimer(self)
         self.game_timer.timeout.connect(self.tick)
         image_path = os.path.join(os.path.dirname(os.fspath(__file__)), "photo", "mole.jpg")
+        self.score_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scores.txt")
         self.mole_icon = QIcon(image_path)
         self.empty_icon = QIcon()
 
@@ -40,14 +42,17 @@ class MyWindow(QMainWindow):
         self.switch_button.clicked.connect(lambda: self.start_game(3))
         self.switch_button2.clicked.connect(lambda: self.start_game(4))
 
+        #Adds a input box for the user set time.
         self.time_input = QLineEdit()
         self.time_input.setPlaceholderText("Enter time in seconds")
-        self.time_input.setValidator(QIntValidator(1, 300))  
+        self.time_input.setValidator(QIntValidator(1, 60))  
 
+        # adds all elements on the page to the same layout.
         page1_layout.addWidget(self.time_input)
         page1_layout.addWidget(self.switch_button)
         page1_layout.addWidget(self.switch_button2)
-        
+
+        # sets the layout and styles for the first page.
         self.page1.setLayout(page1_layout)        
         self.page1.setStyleSheet("background-color: lightblue;")  # Set background color for page1
         self.switch_button.setStyleSheet("background-color: rgb(50, 205, 50); font-size: 16px; padding: 10px; border: 3px solid black;")
@@ -59,25 +64,28 @@ class MyWindow(QMainWindow):
         self.stack.addWidget(self.page1)
         self.stack.addWidget(self.page2)
 
-
+    # Starting game code
     def start_game(self, size):
         self.value = size
         self.score = 0
-        text = self.time_input.text().strip()
-        self.time_left = int(text) if text.isdigit() and int(text) > 0 else 30
-        print(f"{size}X{size} layout button clicked")
+        text = self.time_input.text().strip() # game time is set to the value from the input box.
+        self.time_left = int(text) if text.isdigit() and int(text) > 0 else 30 # if no value was inputted the default time is set to 30 seconds.
+        print(f"{size}X{size} layout button clicked") # size of game grid is printed to terminal for testing.
+        print(f"Time set to: {self.time_left} seconds") # time is posted to terminal for testing.
         self.build_grid()
         self.stack.setCurrentWidget(self.page2)
         self.placemole()
         self.mole_timer.start(2500)   # mole moves every "X" miliseconds (1000 = 1 second)
         self.game_timer.start(1000)   # Changes how fast the timer ticks down in miliseconds, base 1000
 
+    # Timer tick down function that ends the game when the timer runs out.
     def tick(self):
         self.time_left -= 1
         self.time_label.setText(f"Time: {self.time_left}")
         if self.time_left <= 0:
             self.endgame() 
 
+    # Builds grid layout based on the selected size. Adds score and time label aswell.
     def build_grid(self):
         # Clears the previous grid and makes a new one based on selected size.
         self.stack.removeWidget(self.page2)
@@ -166,6 +174,16 @@ class MyWindow(QMainWindow):
         else:
             print("MISS!", self.score)
             self.score_label.setText(f"Score: {self.score}")
+
+    def save_score(self):
+        timestamp = datetime.now().strftime("%Y-%m-%d")
+        line = f"{timestamp}: | {self.value}x{self.value} grid | score: {self.score}\n"
+        try:
+            with open(self.score_file, "a", encoding="utf-8") as f:
+                f.write(line)
+        except Exception as e:
+            print(f"Could not save score: {e}")
+
     def stop_game(self):
         self.mole_timer.stop()
         self.game_timer.stop()
@@ -174,6 +192,7 @@ class MyWindow(QMainWindow):
     def endgame(self):
         self.mole_timer.stop()
         self.game_timer.stop()
+        self.save_score()
         QMessageBox.information(self, "Game over", f"Final score: {self.score}")
         self.stack.setCurrentWidget(self.page1)
 
