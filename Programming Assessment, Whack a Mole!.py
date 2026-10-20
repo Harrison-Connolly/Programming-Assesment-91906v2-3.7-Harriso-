@@ -1,7 +1,7 @@
 import sys
 import random
 import os
-from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLineEdit, QMainWindow, QPushButton, QGridLayout, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout, QLabel, QMessageBox
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLineEdit, QMainWindow, QPushButton, QGridLayout, QSizePolicy, QStackedWidget, QWidget, QVBoxLayout, QLabel, QMessageBox, QToolButton
 from PyQt6.QtCore import Qt, QTimer, QSize
 from datetime import datetime
 from PyQt6.QtGui import QIcon, QIntValidator, QPixmap
@@ -13,25 +13,26 @@ class MyWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
         self.value = 3  # default grid size
-        self.score = 0
+        self.score = 0  # starting score is 0
         self.buttons = []
         self.mole_row = None
         self.mole_col = None
-        self.time_left = 30
         self.mole_timer = QTimer(self)
         self.mole_timer.timeout.connect(self.placemole)   # mole will move on its own depending on time
         self.game_timer = QTimer(self)
         self.game_timer.timeout.connect(self.tick)
-        image_path = os.path.join(os.path.dirname(os.fspath(__file__)), "photo", "mole.jpg")
-        self.score_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scores.txt")
+        image_path = os.path.join(os.path.dirname(os.fspath(__file__)), "photo", "meole.png")    # finds the mole image inside the photo folder to be used in the game
+        # Mole image source: https://toppng.com/free-image/mole-PNG-free-PNG-Images_65391
+
+        self.score_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scores.txt")    # finds the scores.txt file to be used to save the score at the end of the game.
         self.mole_icon = QIcon(image_path)
         self.empty_icon = QIcon()
 
-        self.initUI()
+        self.initUI() # Sets up User Interface.
 
     def initUI(self):
-        self.setWindowTitle("Whack a Mole Game")
-        self.setGeometry(100, 100, 600, 600)
+        self.setWindowTitle("Whack a Mole Game") # sets the title of the window.
+        self.setGeometry(100, 100, 600, 600) # changes the size of the window. value 1 and 2 change opening position on screen, value 3 and 4 change the size of the window.
         
 
         # First page with the buttons to switch game modes.
@@ -39,27 +40,27 @@ class MyWindow(QMainWindow):
         page1_layout = QVBoxLayout()
         self.switch_button = QPushButton("3X3 layout",)
         self.switch_button2 = QPushButton("4X4 layout")
-        self.switch_button.clicked.connect(lambda: self.start_game(3))
-        self.switch_button2.clicked.connect(lambda: self.start_game(4))
+        self.switch_button.clicked.connect(lambda: self.start_game(3)) # connects to the button and sets the size of the grid to 3x3.
+        self.switch_button2.clicked.connect(lambda: self.start_game(4)) # connects to the button and sets the size of the grid to 4x4.
 
         #Adds a input box for the user set time.
         self.time_input = QLineEdit()
-        self.time_input.setPlaceholderText("Enter time in seconds")
-        self.time_input.setValidator(QIntValidator(1, 60))  
+        self.time_input.setPlaceholderText("Enter time in seconds (15 - 60)")
+        self.time_input.setValidator(QIntValidator(15, 60))  # allows only numbers between 15 and 60 to be inputted into the box.
 
         # adds all elements on the page to the same layout.
         page1_layout.addWidget(self.time_input)
         page1_layout.addWidget(self.switch_button)
         page1_layout.addWidget(self.switch_button2)
 
-        # sets the layout and styles for the first page.
+        # sets the layout and colour for the first page.
         self.page1.setLayout(page1_layout)        
         self.page1.setStyleSheet("background-color: lightblue;")  # Set background color for page1
         self.switch_button.setStyleSheet("background-color: rgb(50, 205, 50); font-size: 16px; padding: 10px; border: 3px solid black;")
         self.switch_button2.setStyleSheet("background-color: rgb(50, 205, 50); font-size: 16px; padding: 10px; border: 3px solid black;")
         self.time_input.setStyleSheet("background-color: rgb(50, 205, 50); font-size: 16px; padding: 10px; border: 3px solid black;")
 
-        # Second page with grid layout for the game.
+        # adding all pages to a stack that can be switched between.
         self.page2 = QWidget()
         self.stack.addWidget(self.page1)
         self.stack.addWidget(self.page2)
@@ -69,7 +70,10 @@ class MyWindow(QMainWindow):
         self.value = size
         self.score = 0
         text = self.time_input.text().strip() # game time is set to the value from the input box.
-        self.time_left = int(text) if text.isdigit() and int(text) > 0 else 30 # if no value was inputted the default time is set to 30 seconds.
+        if text.isdigit() and int(text) > 15:
+            self.time_left = min(int(text), 60)  # Limit the time to a maximum of 60 seconds
+        else:
+            self.time_left = 15  # if there was no value or value was less than 15 seconds, the time is set to 15 seconds.
         print(f"{size}X{size} layout button clicked") # size of game grid is printed to terminal for testing.
         print(f"Time set to: {self.time_left} seconds") # time is posted to terminal for testing.
         self.build_grid()
@@ -80,7 +84,7 @@ class MyWindow(QMainWindow):
 
     # Timer tick down function that ends the game when the timer runs out.
     def tick(self):
-        self.time_left -= 1
+        self.time_left -= 1 # decreases the time left by 1 every tick.
         self.time_label.setText(f"Time: {self.time_left}")
         if self.time_left <= 0:
             self.endgame() 
@@ -94,7 +98,7 @@ class MyWindow(QMainWindow):
         self.stack.addWidget(self.page2)
 
         page2_layout = QVBoxLayout()
-
+        # Adds score and time labels to the top of the grid.
         self.score_label = QLabel(f"Score: {self.score}")
         self.score_label.setStyleSheet(
             "color: black; font-size: 14px; font-weight: bold; "
@@ -117,11 +121,11 @@ class MyWindow(QMainWindow):
             "color: black; font-size: 14px; font-weight: bold; "
             "background-color: rgb(50, 205, 50); padding: 4px 8px; border: 3px solid black; border-radius: 4px;"
         )
-
+        # seperates the score and time label from each other.
         score_bar = QHBoxLayout()
         score_bar.addWidget(self.time_label)    # time on the left
         score_bar.addStretch()                  # pushes the back button to the middle
-        score_bar.addWidget(self.back_button)   # time in middle
+        score_bar.addWidget(self.back_button)   # back button in middle
         score_bar.addStretch()                  # pushes the score to the right
         score_bar.addWidget(self.score_label)   # score on right
         page2_layout.addLayout(score_bar)
@@ -131,14 +135,16 @@ class MyWindow(QMainWindow):
         self.buttons = []
         for row in range(self.value):
             for col in range(self.value):
-                button = QPushButton(f"(Empty) {row},{col}")
-                button.setFixedHeight(80)
+                button = QToolButton()
+                button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)  # text goes under the icon
+                button.setIconSize(QSize(56, 56))
+                button.setFixedSize(100, 100)
                 grid_layout.addWidget(button, row, col)
                 button.clicked.connect(lambda clicked, r=row, c=col: self.button_click(r, c))
                 self.buttons.append(button)
                 self.page2.setStyleSheet("background-color: lightgreen;")  # Set background color for page2
                 button.setStyleSheet("background-color: lightgreen; font-size: 16px; padding: 10px; border: 3px solid black;")
-                self.buttons[-1].setStyleSheet("background-color: rgb(119, 63, 26); font-size: 16px; padding: 10px; border: 3px solid black;")
+                self.buttons[-1].setStyleSheet("color: white; background-color: rgb(119, 63, 26); font-size: 16px; padding: 10px; border: 3px solid black;")
 
         page2_layout.addLayout(grid_layout)
         self.page2.setLayout(page2_layout)
@@ -159,7 +165,8 @@ class MyWindow(QMainWindow):
                 break
         self.mole_row, self.mole_col = r, c
         mole_button = self.get_button(r, c)
-        mole_button.setIcon(self.mole_icon)  # Set the mole icon for the button
+        mole_button.setIcon(self.mole_icon) # Set the mole icon for the button
+        mole_button.setText("Mole")  # Incase the image does not load text will be displayed instead.
         mole_button.setIconSize(QSize(64, 64))  # Set the size of the mole icon
 
     #Scoreboard that will go up in value when the mole is hit.
