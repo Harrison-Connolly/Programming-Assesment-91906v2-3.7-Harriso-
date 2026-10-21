@@ -21,8 +21,8 @@ class MyWindow(QMainWindow):
         self.mole_timer.timeout.connect(self.placemole)   # mole will move on its own depending on time
         self.game_timer = QTimer(self)
         self.game_timer.timeout.connect(self.tick)
-        image_path = os.path.join(os.path.dirname(os.fspath(__file__)), "photo", "meole.png")    # finds the mole image inside the photo folder to be used in the game
-        # Mole image source: https://toppng.com/free-image/mole-PNG-free-PNG-Images_65391
+        image_path = os.path.join(os.path.dirname(os.fspath(__file__)), "photo", "mole.png")    # finds the mole image inside the photo folder to be used in the game
+        # Mole image source: https://toppng.com/free-image/mol  e-PNG-free-PNG-Images_65391
 
         self.score_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scores.txt")    # finds the scores.txt file to be used to save the score at the end of the game.
         self.mole_icon = QIcon(image_path)
@@ -98,22 +98,20 @@ class MyWindow(QMainWindow):
         self.stack.addWidget(self.page2)
 
         page2_layout = QVBoxLayout()
-        # Adds score and time labels to the top of the grid.
+        # Adds score and time labels to the top of the grid with styling and formatting.
         self.score_label = QLabel(f"Score: {self.score}")
         self.score_label.setStyleSheet(
             "color: black; font-size: 14px; font-weight: bold; "
-            "background-color: rgb(50, 205, 50); padding: 4px 8px; border: 3px solid black; border-radius: 4px;"
-        )
+            "background-color: rgb(50, 205, 50); padding: 4px 8px; border: 3px solid black; border-radius: 4px;")
         self.score_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.score_label.adjustSize()
         self.time_label = QLabel(f"Time: {self.time_left}")
         self.time_label.setStyleSheet(
             "color: black; font-size: 14px; font-weight: bold; "
-            "background-color: rgb(50, 205, 50); padding: 4px 8px; border: 3px solid black; border-radius: 4px;"
-        )
+            "background-color: rgb(50, 205, 50); padding: 4px 8px; border: 3px solid black; border-radius: 4px;")
         self.time_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
-        # back button code
+        # Adds a back button to the top of the grid that will return to the home page when clicked.
         self.back_button = QPushButton("End Game")
         self.back_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.back_button.clicked.connect(self.back_home)
@@ -153,35 +151,35 @@ class MyWindow(QMainWindow):
     def get_button(self, row, col):
         return self.buttons[row * self.value + col]
 
-    #Code that will determine where the mole is randomly placed in the grid.
+    # Code that will determine where the mole is randomly placed in the grid.
     def placemole(self):
         for button in self.buttons:
             button.setText("")
-            button.setIcon(self.empty_icon) #No image for the empty button so its just blank
+            button.setIcon(self.empty_icon) # No image for the empty button so its just blank
         while True:
-            r = random.randint(0, self.value - 1)
-            c = random.randint(0, self.value - 1)
+            r = random.randint(0, self.value - 1) # randomly selects a row for the mole to be placed in the grid.
+            c = random.randint(0, self.value - 1) # randomly selects a column for the mole to be placed in the grid.
             if (r, c) != (self.mole_row, self.mole_col):
                 break
         self.mole_row, self.mole_col = r, c
         mole_button = self.get_button(r, c)
         mole_button.setIcon(self.mole_icon) # Set the mole icon for the button
         mole_button.setText("Mole")  # Incase the image does not load text will be displayed instead.
-        mole_button.setIconSize(QSize(64, 64))  # Set the size of the mole icon
+        mole_button.setIconSize(QSize(64, 64)) # Set the icon size for the mole button
 
-    #Scoreboard that will go up in value when the mole is hit.
+    # Scoreboard that will go up in value when the mole is hit.
     def button_click(self, row, col):
         if row == self.mole_row and col == self.mole_col:
             print("HIT!")
             self.score += 1
             self.score_label.setText(f"Score: {self.score}")
             print(f"Score: {self.score}")
-            self.placemole()  # Place a new mole
-            self.mole_timer.start(1000)
+            self.placemole()  # Place a new mole 
+            self.mole_timer.start(1000) # Resets the mole timer to 1 second after a hit.
         else:
             print("MISS!", self.score)
             self.score_label.setText(f"Score: {self.score}")
-
+    # Saves the score to a text file with the date, grid size, and score.
     def save_score(self):
         timestamp = datetime.now().strftime("%Y-%m-%d")
         line = f"{timestamp}: | {self.value}x{self.value} grid | score: {self.score}\n"
@@ -190,24 +188,23 @@ class MyWindow(QMainWindow):
                 f.write(line)
         except Exception as e:
             print(f"Could not save score: {e}")
-
+    # Stops the game and returns to the home page.
     def stop_game(self):
         self.mole_timer.stop()
         self.game_timer.stop()
         self.stack.setCurrentWidget(self.page1)
-
+    # Ends the game when the timer runs out and displays the final score in a message box.
     def endgame(self):
         self.mole_timer.stop()
         self.game_timer.stop()
         self.save_score()
         QMessageBox.information(self, "Game over", f"Final score: {self.score}")
         self.stack.setCurrentWidget(self.page1)
-
+    # Returns to the home page when the back button is clicked.
     def back_home(self):
         self.stop_game()
 
     
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     this_window = MyWindow()
